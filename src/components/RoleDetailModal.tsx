@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { X, Briefcase, ChevronRight, GraduationCap, Play } from "lucide-react";
 import AbilityRadarChart, { RadarData } from "@/components/AbilityRadarChart";
 import { useRouter } from "next/navigation";
+import { useUserId } from "@/lib/useUserId";
 
 interface RoleDetailModalProps {
   roleId: string;
@@ -12,14 +13,19 @@ interface RoleDetailModalProps {
 
 export default function RoleDetailModal({ roleId, onClose }: RoleDetailModalProps) {
   const router = useRouter();
+  const userId = useUserId();
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState<any>(null);
 
   useEffect(() => {
+    // 确保 userId 有效时再请求
+    if (!userId || userId === "demo-user-123") return;
+    
     const fetchDetails = async () => {
       try {
         const res = await fetch(`/api/careers/${roleId}/details`, {
-          headers: { "X-User-Id": "demo-user-123" },
+          headers: { "X-User-Id": userId },
+          cache: "no-store",
         });
         const json = await res.json();
         if (json.code === 200) {
@@ -32,7 +38,7 @@ export default function RoleDetailModal({ roleId, onClose }: RoleDetailModalProp
       }
     };
     fetchDetails();
-  }, [roleId]);
+  }, [roleId, userId]);
 
   if (!roleId) return null;
 

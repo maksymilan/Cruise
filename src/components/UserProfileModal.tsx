@@ -21,10 +21,14 @@ export default function UserProfileModal({ onClose }: UserProfileModalProps) {
   const [isEditingResume, setIsEditingResume] = useState(false);
 
   useEffect(() => {
+    // 确保 userId 有效时再请求
+    if (!userId || userId === "demo-user-123") return;
+    
     const fetchProfile = async () => {
       try {
         const res = await fetch("/api/user/profile", {
           headers: { "X-User-Id": userId },
+          cache: "no-store",
         });
         const json = await res.json();
         if (json.code === 200) {
@@ -38,7 +42,7 @@ export default function UserProfileModal({ onClose }: UserProfileModalProps) {
       }
     };
     fetchProfile();
-  }, []);
+  }, [userId]);
 
   const handleSave = async (type: "persona" | "resume") => {
     setIsSaving(true);
