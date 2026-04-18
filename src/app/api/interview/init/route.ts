@@ -16,14 +16,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ code: 4000, message: "缺少 targetRole" }, { status: 400 });
     }
 
-    // 获取用户的全局画像和简历信息
-    const user = await prisma.user.findUnique({
+    // 确保用户在数据库中存在（防止外键约束报错 P2003）
+    let user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { persona: true, resumeText: true },
+      select: { id: true, persona: true, resumeText: true },
     });
 
-    const personaContext = user?.persona ? `候选人的技术画像与能力特点：${user.persona}` : "";
-    const resumeInfo = user?.resumeText || resumeContext || "暂无特殊背景";
+    // 如果用户不存在，则创建一个初始用户
+    if (!user) {
+      user = await prisma.user.create({
+        data: { id: userId, roleType: "student" },
+        select: { id: true, persona: true, resumeText: true },
+      });
+    }
+
+    const personaContext = user.persona ? `候选人的技术画像与能力特点：${user.persona}` : "";
+    const resumeInfo = user.resumeText || resumeContext || "暂无特殊背景";
 
     // 1. 生成第一道面试题 (作为 AI 的开场白)
     const prompt = `
