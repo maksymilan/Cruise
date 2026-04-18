@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String             @id @default(uuid())
+  roleType          String             @default("student") // "student" or "alumni"
+  persona           String?            // 全局的用户个人画像
+  careerPath        String?            // 全局的职业生涯规划路径图
+  resumeText        String?            // 用户后续上传的简历或其他个人背景信息
+  createdAt         DateTime           @default(now())
+  transcripts       Transcript[]
+  analysisReports   AnalysisReport[]
+  interviewSessions InterviewSession[]
+}
+
+model Transcript {
+  id              String           @id @default(uuid())
+  userId          String
+  rawFileUrl      String
+  parsedData      String           // JSON string of courses, credits, scores
+  createdAt       DateTime         @default(now())
+  
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysisReports AnalysisReport[]
+}
+
+model AnalysisReport {
+  id                 String     @id @default(uuid())
+  userId             String
+  transcriptId       String
+  radarData          String     // JSON string of radar chart data
+  optimizationAdvice String     // JSON string of Agent-generated advice
+  detailedGuide      String?    // 长篇 Markdown 详细指导文档
+  inferredGrade      String?    // 新增：AI 推断出的用户当前年级（如：大三下学期）
+  persona            String?    // 新增：AI 生成的用户个人画像（可编辑）
+  careerPath         String?    // 新增：AI 生成的职业生涯规划路径图（可编辑，JSON字符串）
+  createdAt          DateTime   @default(now())
+
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transcript         Transcript @relation(fields: [transcriptId], references: [id], onDelete: Cascade)
+}
+model CareerRole {
+  id             String @id @default(uuid())
+  companyName    String
+  companyUrl     String? // 新增：公司招聘官网链接
+  roleName       String
+  requiredRadar  String // JSON string of required radar baseline
+  salaryRange    String
+  description    String
+}
+
+model InterviewSession {
+  id          String             @id @default(uuid())
+  userId      String
+  targetRole  String
+  status      String             @default("ongoing") // "ongoing" or "completed"
+  reportData  String?            // JSON string of interview report
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages    InterviewMessage[]
+}
+
+model InterviewMessage {
+  id         String           @id @default(uuid())
+  sessionId  String
+  role       String           // "user" or "ai"
+  content    String
+  createdAt  DateTime         @default(now())
+
+  session    InterviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}

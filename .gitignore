@@ -1,0 +1,10 @@
+.env
+Design.md
+api.md
+node_modules/
+.next/
+*.db
+*.db-journal
+
+/generated/prisma
+*.pdf
