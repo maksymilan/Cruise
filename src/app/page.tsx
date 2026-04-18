@@ -6,8 +6,10 @@ import AbilityRadarChart, { RadarData } from "@/components/AbilityRadarChart";
 import EditablePersonaPath from "@/components/EditablePersonaPath";
 import { CheckCircle2, BookOpen, Brain, Briefcase, Code } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useUserId } from "@/lib/useUserId";
 
 export default function Home() {
+  const userId = useUserId();
   const [isUploading, setIsUploading] = useState(false);
   const [parsedResult, setParsedResult] = useState<string | null>(null);
   const [radarData, setRadarData] = useState<RadarData | null>(null);
@@ -40,7 +42,7 @@ export default function Home() {
       const parseRes = await fetch("/api/transcript/parse", {
         method: "POST",
         headers: {
-          "X-User-Id": "demo-user-123", // 模拟演示用户
+          "X-User-Id": userId, 
         },
         body: formData,
       });
@@ -62,7 +64,7 @@ export default function Home() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-User-Id": "demo-user-123",
+          "X-User-Id": userId,
         },
         body: JSON.stringify({
           parsedId,

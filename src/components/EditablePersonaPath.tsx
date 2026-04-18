@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { Edit2, Check, User, Map } from "lucide-react";
+import { useUserId } from "@/lib/useUserId";
 
 interface CareerPathItem {
   phase: string;
@@ -20,6 +21,7 @@ export default function EditablePersonaPath({
   initialPersona,
   initialCareerPath,
 }: EditablePersonaPathProps) {
+  const userId = useUserId();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [persona, setPersona] = useState(initialPersona);
@@ -32,7 +34,7 @@ export default function EditablePersonaPath({
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "X-User-Id": "demo-user-123",
+          "X-User-Id": userId,
         },
         body: JSON.stringify({ persona, careerPath }),
       });

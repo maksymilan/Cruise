@@ -2,12 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { X, User, FileText, Check, Edit2 } from "lucide-react";
+import { useUserId } from "@/lib/useUserId";
 
 interface UserProfileModalProps {
   onClose: () => void;
 }
 
 export default function UserProfileModal({ onClose }: UserProfileModalProps) {
+  const userId = useUserId();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<"persona" | "resume">("persona");
@@ -22,7 +24,7 @@ export default function UserProfileModal({ onClose }: UserProfileModalProps) {
     const fetchProfile = async () => {
       try {
         const res = await fetch("/api/user/profile", {
-          headers: { "X-User-Id": "demo-user-123" },
+          headers: { "X-User-Id": userId },
         });
         const json = await res.json();
         if (json.code === 200) {
@@ -46,7 +48,7 @@ export default function UserProfileModal({ onClose }: UserProfileModalProps) {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "X-User-Id": "demo-user-123",
+          "X-User-Id": userId,
         },
         body: JSON.stringify(payload),
       });

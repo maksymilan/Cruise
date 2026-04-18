@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, Suspense } from "react";
 import { Send, User, Bot, AlertTriangle, Clock, History, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useSearchParams } from "next/navigation";
+import { useUserId } from "@/lib/useUserId";
 
 interface Message {
   id: string;
@@ -14,6 +15,7 @@ interface Message {
 function InterviewConsoleInner() {
   const searchParams = useSearchParams();
   const initialRole = searchParams.get("role") || "后端开发工程师";
+  const userId = useUserId();
 
   const [targetRole, setTargetRole] = useState(initialRole);
   const [duration, setDuration] = useState(30); // 面试时长（分钟）
@@ -57,7 +59,7 @@ function InterviewConsoleInner() {
     setIsLoadingHistory(true);
     try {
       const res = await fetch("/api/interview/history", {
-        headers: { "X-User-Id": "demo-user-123" }
+        headers: { "X-User-Id": userId }
       });
       const data = await res.json();
       if (data.code === 200) {
@@ -80,7 +82,7 @@ function InterviewConsoleInner() {
   const viewHistoryDetail = async (id: string) => {
     try {
       const res = await fetch(`/api/interview/history/${id}`, {
-        headers: { "X-User-Id": "demo-user-123" }
+        headers: { "X-User-Id": userId }
       });
       const data = await res.json();
       if (data.code === 200) {
@@ -108,7 +110,7 @@ function InterviewConsoleInner() {
     try {
       const res = await fetch("/api/interview/init", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-User-Id": "demo-user-123" },
+        headers: { "Content-Type": "application/json", "X-User-Id": userId },
         body: JSON.stringify({ targetRole, resumeContext: "大三学生，有过简单的校园项目经验" })
       });
       const data = await res.json();
@@ -136,7 +138,7 @@ function InterviewConsoleInner() {
     try {
       const res = await fetch("/api/interview/report", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-User-Id": "demo-user-123" },
+        headers: { "Content-Type": "application/json", "X-User-Id": userId },
         body: JSON.stringify({ sessionId })
       });
       const data = await res.json();
@@ -169,8 +171,8 @@ function InterviewConsoleInner() {
     try {
       const response = await fetch("/api/interview/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "X-User-Id": "demo-user-123" },
-        body: JSON.stringify({ sessionId, userMessage: userMsgText })
+        headers: { "Content-Type": "application/json", "X-User-Id": userId },
+        body: JSON.stringify({ sessionId, content: userMsg.content })
       });
 
       if (!response.ok) throw new Error("请求失败");
