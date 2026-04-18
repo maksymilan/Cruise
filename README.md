@@ -52,42 +52,42 @@
 ## 🚀 快速开始
 
 ### 1. 克隆并安装依赖
-\`\`\`bash
+```bash
 git clone <repository-url>
 cd Cruise
 npm install
-\`\`\`
+```
 
 ### 2. 环境配置
-在项目根目录创建一个 \`.env\` 文件，并配置你的大模型 API 密钥：
-\`\`\`env
+在项目根目录创建一个 `.env` 文件，并配置你的大模型 API 密钥：
+```env
 # 数据库连接
 DATABASE_URL="file:./dev.db"
 
 # OpenAI 兼容 API 配置 (必填)
 API_KEY="sk-xxxxxxxxxxxxxxxxxxxxxxxx"
 BASE_URL="https://api.openai.com/v1" # 或使用国内/中转代理商的 URL
-\`\`\`
+```
 
 ### 3. 初始化数据库与注入真实数据
 生成 Prisma Client，并将表结构推送到本地 SQLite 数据库，最后注入大厂岗位真实 Seed 数据：
-\`\`\`bash
+```bash
 npx prisma db push
 npx prisma generate
 npm run prisma:seed
-\`\`\`
+```
 
 ### 4. 启动开发服务器
-\`\`\`bash
+```bash
 npm run dev
-\`\`\`
+```
 打开浏览器访问 [http://localhost:3000](http://localhost:3000) (或根据终端提示的端口访问) 即可开始体验！
 
 ---
 
 ## 📂 项目结构概览
 
-\`\`\`text
+```text
 Cruise/
 ├── prisma/
 │   ├── schema.prisma       # 数据库模型定义 (User, Transcript, AnalysisReport, CareerRole, Session, Message)
@@ -109,7 +109,7 @@ Cruise/
 │   └── lib/                # 工具函数 (Prisma 实例)
 ├── Design.md               # 早期项目需求与架构设计文档
 └── package.json            # 依赖与脚本配置
-\`\`\`
+```
 
 ---
 
