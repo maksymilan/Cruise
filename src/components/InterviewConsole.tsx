@@ -172,7 +172,7 @@ function InterviewConsoleInner() {
       const response = await fetch("/api/interview/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-User-Id": userId },
-        body: JSON.stringify({ sessionId, content: userMsg.content })
+        body: JSON.stringify({ sessionId, userMessage: userMsg.content })
       });
 
       if (!response.ok) throw new Error("请求失败");
