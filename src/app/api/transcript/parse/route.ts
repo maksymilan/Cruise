@@ -30,14 +30,28 @@ export async function POST(request: Request) {
 
     let extractedText = "";
 
+    console.log(`\n--- [Parse API] 开始处理文件上传 ---`);
+    console.log(`[Parse API] 文件名: ${file.name}, 类型: ${file.type}, 大小: ${file.size} bytes`);
+
     if (file.type === "application/pdf") {
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const data = await pdf(buffer);
-      extractedText = data.text;
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const data = await pdf(buffer);
+        extractedText = data.text;
+        console.log(`[Parse API] PDF解析成功，提取文本长度: ${extractedText.length}`);
+        console.log(`[Parse API] 提取文本前500字符: \n${extractedText.substring(0, 500)}\n------------------------`);
+      } catch (err) {
+        console.error(`[Parse API] PDF解析失败:`, err);
+        return NextResponse.json({ code: 5001, message: "PDF读取失败，请检查文件是否损坏" }, { status: 500 });
+      }
     } else {
-      // 图像文件，如果需要支持可以调用 vision API，此处为了稳定先降级或提示不支持
+      console.log(`[Parse API] 收到图像文件，暂无 Vision OCR，使用降级提示。`);
       extractedText = "此为图像文件，目前仅支持 PDF 成绩单的精确提取。如果是真实成绩单，请提供对应专业和课程信息。";
+    }
+
+    if (extractedText.trim().length < 20 && file.type === "application/pdf") {
+      console.warn(`[Parse API] 提取到的文本过短，可能是纯图片/扫描件 PDF。`);
     }
 
     // 调用大模型提取课程信息和专业信息
@@ -58,9 +72,12 @@ export async function POST(request: Request) {
         }
       ]
     }
-    注意：提取出尽可能多的课程。如果文本中没有明确写明学期，可以尝试根据顺序推断，或者填“未知学期”。
+    注意：
+    1. 提取出尽可能多的课程。如果文本中没有明确写明学期，可以尝试根据顺序推断，或者填“未知学期”。
+    2. 如果文本内容提示为图像文件或者无法识别到任何课程，请在 major 中填入 "解析失败"，courses 返回空数组。
     `;
 
+    console.log(`[Parse API] 准备请求大模型进行结构化提取...`);
     const response = await openai.chat.completions.create({
       model: "ep-20250218165747-8zng5", // 或使用当前默认模型
       messages: [{ role: "user", content: prompt }],
@@ -68,6 +85,8 @@ export async function POST(request: Request) {
     });
 
     let rawOutput = response.choices[0].message.content || "{}";
+    console.log(`[Parse API] 大模型返回原始结果: \n${rawOutput}\n------------------------`);
+    
     rawOutput = rawOutput.replace(/```json/g, "").replace(/```/g, "").trim();
     
     let parsedJson;

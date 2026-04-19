@@ -10,8 +10,11 @@ const openai = new OpenAI({
 
 export async function POST(request: Request) {
   try {
-    const { parsedId, major = "计算机相关" } = await request.json();
+    const { parsedId, major = "未知专业" } = await request.json();
     const userId = request.headers.get("X-User-Id") || "demo-user-123";
+
+    console.log(`\n--- [Generate API] 开始生成分析报告 ---`);
+    console.log(`[Generate API] 请求参数: parsedId=${parsedId}, major=${major}`);
 
     if (!parsedId) {
       return NextResponse.json({ code: 4000, message: "缺少 parsedId" }, { status: 400 });
@@ -30,8 +33,9 @@ export async function POST(request: Request) {
     try {
       const parsedData = JSON.parse(transcript.parsedData);
       courses = Array.isArray(parsedData) ? parsedData : parsedData.courses || [];
+      console.log(`[Generate API] 成功获取课程数量: ${courses.length}`);
     } catch (e) {
-      console.error("解析成绩单数据失败", e);
+      console.error("[Generate API] 解析成绩单数据失败", e);
     }
 
     // 2. 启动 Agent：通过 Trae 内置能力或模拟联网获取当前专业最新校招、实习动态
@@ -53,7 +57,7 @@ export async function POST(request: Request) {
 摘要：建议在校期间平衡理论与实践，除了掌握专业核心技能，还需注重软技能培养，如逻辑分析、方案设计、团队协作与跨部门沟通能力。
       `.trim();
     } catch (e) {
-      console.warn("Agent 联网搜索失败，降级为使用模型内置知识:", e);
+      console.warn("[Generate API] Agent 联网搜索失败，降级为使用模型内置知识:", e);
     }
 
     // 3. 构建 Prompt 给 LLM 生成雷达数据与分析报告
@@ -66,6 +70,11 @@ export async function POST(request: Request) {
 
     请基于以上信息，先根据用户最晚的课程时间推断出该用户当前所处的年级（例如：大二下学期、大三上学期等），然后结合所处年级进行分析。
     
+    【重要警告】：
+    1. 必须严格按照用户的【专业】（${major}）和【课程内容】来制定职业规划！
+    2. 绝不允许把非计算机专业的学生（如英语、汉语言、工商管理等）引导向程序员、写代码或互联网开发岗位！
+    3. 如果专业是"未知专业"或"通用专业"，请根据其修读的课程（如：英语阅读、翻译等）来推断真实的专业领域，并给出对应领域的规划。
+
     请返回严格的 JSON 格式数据，确保 JSON 结构严格如下（不要输出 markdown 代码块，直接输出合法 JSON）：
     {
       "inferredGrade": "string (推断出的当前年级，如：大三下学期)",
