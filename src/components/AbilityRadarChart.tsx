@@ -12,8 +12,8 @@ import {
 } from "recharts";
 
 export interface RadarData {
-  programming: number;
-  math: number;
+  coreSkills: number;
+  mathOrLogic: number;
   analysis: number;
   communication: number;
   teamwork: number;
@@ -24,11 +24,11 @@ interface AbilityRadarChartProps {
 }
 
 const DIMENSION_MAP: Record<keyof RadarData, string> = {
-  programming: "编程实践",
-  math: "数学基础",
-  analysis: "分析解决",
-  communication: "沟通表达",
-  teamwork: "团队协作",
+  coreSkills: "核心专业能力",
+  mathOrLogic: "逻辑/数理基础",
+  analysis: "问题分析解决",
+  communication: "沟通表达撰写",
+  teamwork: "团队协作领导",
 };
 
 export default function AbilityRadarChart({ data }: AbilityRadarChartProps) {
