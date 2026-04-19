@@ -58,6 +58,7 @@ export default function Home() {
       }
 
       const parsedId = parseData.data.parsedId;
+      const parsedMajor = parseData.data.major; // 新增：从解析结果中获取专业
 
       // 2. 调用 AI 分析接口 (包含联网 Agent)
       const generateRes = await fetch("/api/analysis/generate", {
@@ -68,7 +69,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           parsedId,
-          major: "计算机科学与技术", // 演示写死，实际可从解析结果或用户档案提取
+          major: parsedMajor || "未知专业", // 使用解析出的专业
         }),
       });
 

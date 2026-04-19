@@ -26,7 +26,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ code: 4040, message: "成绩单记录不存在" }, { status: 404 });
     }
 
-    const courses = JSON.parse(transcript.parsedData);
+    let courses = [];
+    try {
+      const parsedData = JSON.parse(transcript.parsedData);
+      courses = Array.isArray(parsedData) ? parsedData : parsedData.courses || [];
+    } catch (e) {
+      console.error("解析成绩单数据失败", e);
+    }
 
     // 2. 启动 Agent：通过 Trae 内置能力或模拟联网获取当前专业最新校招、实习动态
     // 注：在真实的生产环境中，这里可以调用 Bing Search API、Google Custom Search API，

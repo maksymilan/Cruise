@@ -1,45 +1,93 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import OpenAI from "openai";
+
+const pdf = require("pdf-parse");
+
+const openai = new OpenAI({
+  apiKey: process.env.API_KEY || "",
+  baseURL: process.env.BASE_URL || "https://api.openai.com/v1",
+});
 
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
-    // 为了方便演示，如果没有传 User-Id，默认分配一个
     const userId = request.headers.get("X-User-Id") || "demo-user-123";
 
     if (!file) {
       return NextResponse.json({ code: 4000, message: "未检测到上传的文件" }, { status: 400 });
     }
 
-    // 校验文件格式
     if (!["application/pdf", "image/png", "image/jpeg"].includes(file.type)) {
       return NextResponse.json({ code: 4001, message: "不支持的文件格式" }, { status: 400 });
     }
 
-    // 确保用户存在（演示环境自动创建）
     let user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       user = await prisma.user.create({ data: { id: userId, roleType: "student" } });
     }
 
-    // 模拟 OCR 提取过程：实际项目中这里会调用阿里云 OCR 或 OpenAI Vision API
-    // 这里我们使用一份写死的结构化成绩单数据作为演示，并带有明确的学期时间信息
-    const mockCourses = [
-      { name: "微积分", credit: 5.0, score: 85, term: "2023-2024秋季学期" },
-      { name: "大学英语", credit: 2.0, score: 90, term: "2023-2024秋季学期" },
-      { name: "数据结构", credit: 3.0, score: 92, term: "2024-2025秋季学期" },
-      { name: "计算机网络", credit: 4.0, score: 78, term: "2024-2025春季学期" },
-      { name: "操作系统", credit: 4.0, score: 88, term: "2025-2026秋季学期" },
-      { name: "软件工程", credit: 3.0, score: 82, term: "2025-2026春季学期" },
+    let extractedText = "";
+
+    if (file.type === "application/pdf") {
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const data = await pdf(buffer);
+      extractedText = data.text;
+    } else {
+      // 图像文件，如果需要支持可以调用 vision API，此处为了稳定先降级或提示不支持
+      extractedText = "此为图像文件，目前仅支持 PDF 成绩单的精确提取。如果是真实成绩单，请提供对应专业和课程信息。";
+    }
+
+    // 调用大模型提取课程信息和专业信息
+    const prompt = `
+    你是一个专业的成绩单解析助手。请从以下文本中提取用户的【专业名称】以及【所有的课程成绩信息】。
+    文本内容如下：
+    ${extractedText.substring(0, 4000)} // 限制长度防止超长
+
+    请返回严格的 JSON 格式数据（不要输出 markdown 代码块，直接输出合法 JSON）：
+    {
+      "major": "string (如：工商管理、计算机科学与技术、汉语言文学等。如果无法识别，请根据课程推断，或默认填'通用专业')",
+      "courses": [
+        {
+          "name": "string (课程名称)",
+          "credit": <数字，学分，如无则填 0>,
+          "score": <数字，成绩，百分制。如果是优良中差，请转换为 90, 80, 70, 60>,
+          "term": "string (学期，如：2023-2024秋季学期)"
+        }
+      ]
+    }
+    注意：提取出尽可能多的课程。如果文本中没有明确写明学期，可以尝试根据顺序推断，或者填“未知学期”。
+    `;
+
+    const response = await openai.chat.completions.create({
+      model: "ep-20250218165747-8zng5", // 或使用当前默认模型
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.1,
+    });
+
+    let rawOutput = response.choices[0].message.content || "{}";
+    rawOutput = rawOutput.replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    let parsedJson;
+    try {
+      parsedJson = JSON.parse(rawOutput);
+    } catch (e) {
+      console.error("LLM 返回非合法 JSON:", rawOutput);
+      parsedJson = { major: "未知专业", courses: [] };
+    }
+
+    const major = parsedJson.major || "未知专业";
+    const courses = parsedJson.courses && parsedJson.courses.length > 0 ? parsedJson.courses : [
+      { name: "未识别出具体课程", credit: 0, score: 0, term: "未知学期" }
     ];
 
-    // 将解析记录存入数据库
     const transcript = await prisma.transcript.create({
       data: {
         userId: user.id,
-        rawFileUrl: `local-mock-storage/${file.name}`, // 模拟文件存储路径
-        parsedData: JSON.stringify(mockCourses),
+        rawFileUrl: `local-mock-storage/${file.name}`,
+        parsedData: JSON.stringify({ major, courses }), // 存入 major 和 courses
       },
     });
 
@@ -47,7 +95,8 @@ export async function POST(request: Request) {
       code: 200,
       data: {
         parsedId: transcript.id,
-        courses: mockCourses,
+        major: major,
+        courses: courses,
       },
     });
   } catch (error: any) {
