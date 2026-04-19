@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import OpenAI from "openai";
-
-const pdf = require("pdf-parse");
+import PDFParser from "pdf2json";
 
 const openai = new OpenAI({
   apiKey: process.env.API_KEY || "",
@@ -37,8 +36,21 @@ export async function POST(request: Request) {
       try {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        const data = await pdf(buffer);
-        extractedText = data.text;
+        
+        extractedText = await new Promise((resolve, reject) => {
+          const pdfParser = new PDFParser(null, true); // true means output text only
+          
+          pdfParser.on("pdfParser_dataError", (errData: any) => {
+            reject(errData.parserError);
+          });
+          
+          pdfParser.on("pdfParser_dataReady", () => {
+            resolve(pdfParser.getRawTextContent());
+          });
+          
+          pdfParser.parseBuffer(buffer);
+        });
+
         console.log(`[Parse API] PDF解析成功，提取文本长度: ${extractedText.length}`);
         console.log(`[Parse API] 提取文本前500字符: \n${extractedText.substring(0, 500)}\n------------------------`);
       } catch (err) {
