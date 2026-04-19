@@ -102,7 +102,11 @@ export default function UploadTranscript({
         {isUploading ? (
           <>
             <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
-            <p className="text-gray-700 font-medium">AI 正在解析成绩单中...</p>
+            <p className="text-gray-700 font-medium">AI 正在深度解析并生成报告中...</p>
+            <p className="text-sm text-blue-500 mt-2 font-medium">请耐心等待约 1~2 分钟，期间请勿刷新页面</p>
+            <div className="w-full max-w-xs bg-gray-200 rounded-full h-1.5 mt-4 overflow-hidden">
+              <div className="bg-blue-500 h-1.5 rounded-full animate-pulse w-full origin-left" style={{ animationDuration: '2s' }}></div>
+            </div>
           </>
         ) : selectedFile ? (
           <>
