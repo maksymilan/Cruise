@@ -91,7 +91,7 @@ export async function POST(request: Request) {
 
     console.log(`[Parse API] 准备请求大模型进行结构化提取...`);
     const response = await openai.chat.completions.create({
-      model: "ep-20250218165747-8zng5", // 或使用当前默认模型
+      model: process.env.MODEL_NAME || "gpt-3.5-turbo", // 使用环境变量，如果不存在则回退到一个通用默认模型
       messages: [{ role: "user", content: prompt }],
       temperature: 0.1,
     });

@@ -117,10 +117,9 @@ export async function POST(request: Request) {
 
     // 4. 调用 OpenAI 接口
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o", // 你可以根据自己的 API KEY 权限换成 "gpt-3.5-turbo" 或其他模型
+      model: process.env.MODEL_NAME || "gpt-3.5-turbo", // 使用统一的模型环境变量配置
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
-      // 移除 response_format，兼容更多国内大模型和中转 API
     });
 
     let aiResponseText = completion.choices[0].message.content || "{}";
